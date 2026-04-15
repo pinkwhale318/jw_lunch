@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘 점심 드세요?</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 24px 16px; }
+    .phone { background: #fff; border-radius: 24px; border: 1px solid #e0dfd8; width: 100%; max-width: 380px; overflow: hidden; }
+    .ph-header { padding: 24px 20px 16px; border-bottom: 1px solid #ebebeb; }
+    .ph-date { font-size: 12px; color: #aaa; margin-bottom: 4px; }
+    .ph-title { font-size: 22px; font-weight: 600; color: #111; margin-bottom: 3px; }
+    .ph-sub { font-size: 13px; color: #888; }
+    .deadline-banner { margin: 0; padding: 10px 16px; background: #FAECE7; text-align: center; font-size: 13px; color: #993C1D; font-weight: 600; }
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 14px 16px; }
+    .stat-card { background: #f8f8f5; border-radius: 10px; padding: 10px 12px; }
+    .stat-label { font-size: 11px; color: #aaa; margin-bottom: 3px; }
+    .stat-num { font-size: 24px; font-weight: 600; }
+    .sn-yes { color: #0F6E56; }
+    .sn-no { color: #993C1D; }
+    .sn-pending { color: #888; }
+    .my-vote { padding: 0 16px 14px; }
+    .vote-label { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .name-select { width: 100%; margin-bottom: 8px; font-size: 14px; padding: 9px 10px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #111; }
+    .name-select:disabled { background: #f8f8f5; color: #bbb; cursor: not-allowed; }
+    .vote-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-yes { background: #E1F5EE; border: 1.5px solid #1D9E75; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600; color: #0F6E56; cursor: pointer; text-align: center; transition: opacity .15s; }
+    .btn-yes:hover { opacity: .8; }
+    .btn-yes.active { background: #1D9E75; color: #fff; }
+    .btn-yes.disabled { background: #f0f0f0; border-color: #ddd; color: #bbb; cursor: not-allowed; pointer-events: none; }
+    .btn-no { background: #f8f8f5; border: 1px solid #ddd; border-radius: 10px; padding: 12px; font-size: 14px; color: #888; cursor: pointer; text-align: center; transition: opacity .15s; }
+    .btn-no:hover { opacity: .8; }
+    .btn-no.active { background: #FAECE7; border-color: #993C1D; color: #993C1D; font-weight: 600; }
+    .btn-no.disabled { background: #f0f0f0; border-color: #ddd; color: #bbb; cursor: not-allowed; pointer-events: none; }
+    .divider { height: 1px; background: #ebebeb; margin: 0 16px; }
+    .member-list { padding: 14px 16px 4px; }
+    .list-label { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .member-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f0f0f0; }
+    .member-row:last-child { border-bottom: none; }
+    .member-name { font-size: 14px; color: #111; }
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+    .b-yes { background: #E1F5EE; color: #0F6E56; }
+    .b-no { background: #FAECE7; color: #993C1D; }
+    .b-pending { background: #f8f8f5; color: #aaa; }
+    .ph-footer { padding: 12px 16px 24px; border-top: 1px solid #ebebeb; margin-top: 4px; }
+    .reset-btn { width: 100%; background: #f8f8f5; border: 1px solid #ddd; border-radius: 10px; padding: 10px; font-size: 13px; color: #888; cursor: pointer; text-align: center; }
+    .reset-btn:hover { background: #f0f0ec; }
+    .toast { font-size: 12px; color: #aaa; text-align: center; margin-top: 8px; min-height: 16px; }
+    .loading { text-align: center; padding: 20px; color: #aaa; font-size: 13px; }
+    #deadline-banner { display: none; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="ph-header">
+      <p class="ph-date" id="today-date"></p>
+      <p class="ph-title">오늘 점심 드세요?</p>
+      <p class="ph-sub" id="sub-text">불러오는 중...</p>
+    </div>
+
+    <div class="deadline-banner" id="deadline-banner">
+      마감됐어요 (오전 10:30 마감)
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <p class="stat-label">먹어요</p>
+        <p class="stat-num sn-yes" id="cnt-yes">-</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">안 먹어요</p>
+        <p class="stat-num sn-no" id="cnt-no">-</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">미응답</p>
+        <p class="stat-num sn-pending" id="cnt-pending">-</p>
+      </div>
+    </div>
+
+    <div class="my-vote">
+      <p class="vote-label">내 이름을 선택하세요</p>
+      <select class="name-select" id="name-select">
+        <option value="">— 선택 —</option>
+        <option>정자영</option>
+        <option>이보람</option>
+        <option>김수경</option>
+        <option>정태영</option>
+        <option>예혜림</option>
+        <option>양지현</option>
+        <option>최지성</option>
+        <option>김태우</option>
+        <option>김유현</option>
+        <option>구교빈</option>
+        <option>곽병문</option>
+        <option>류다희</option>
+      </select>
+      <div class="vote-btns">
+        <div class="btn-yes" id="btn-yes" onclick="vote('yes')">먹어요</div>
+        <div class="btn-no" id="btn-no" onclick="vote('no')">안 먹어요</div>
+      </div>
+      <p class="toast" id="toast"></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="member-list">
+      <p class="list-label">팀원 현황</p>
+      <div id="member-list-body"><p class="loading">불러오는 중...</p></div>
+    </div>
+
+    <div class="ph-footer">
+      <div class="reset-btn" onclick="resetAll()">오늘 응답 초기화</div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const DEADLINE_HOUR = 10;
+    const DEADLINE_MIN = 30;
+
+    const MEMBERS = ['정자영','이보람','김수경','정태영','예혜림','양지현','최지성','김태우','김유현','구교빈','곽병문','류다희'];
+
+    function isPastDeadline() {
+      const now = new Date();
+      return now.getHours() > DEADLINE_HOUR || (now.getHours() === DEADLINE_HOUR && now.getMinutes() >= DEADLINE_MIN);
+    }
+
+    function applyDeadlineUI() {
+      const past = isPastDeadline();
+      document.getElementById('deadline-banner').style.display = past ? 'block' : 'none';
+      document.getElementById('name-select').disabled = past;
+      document.getElementById('btn-yes').classList.toggle('disabled', past);
+      document.getElementById('btn-no').classList.toggle('disabled', past);
+    }
+
+    function getToday() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getTodayLabel() {
+      const d = new Date();
+      const days = ['일','월','화','수','목','금','토'];
+      return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+    }
+
+    async function fetchVotes() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/lunch_votes?date=eq.${getToday()}&select=name,vote`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      return await res.json();
+    }
+
+    async function upsertVote(name, vote) {
+      await fetch(`${SUPABASE_URL}/rest/v1/lunch_votes`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({ date: getToday(), name, vote })
+      });
+    }
+
+    async function deleteVote(name) {
+      await fetch(`${SUPABASE_URL}/rest/v1/lunch_votes?date=eq.${getToday()}&name=eq.${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+    }
+
+    async function deleteAll() {
+      await fetch(`${SUPABASE_URL}/rest/v1/lunch_votes?date=eq.${getToday()}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+    }
+
+    let votes = {};
+
+    async function render() {
+      document.getElementById('today-date').textContent = getTodayLabel();
+      applyDeadlineUI();
+
+      const rows = await fetchVotes();
+      votes = {};
+      rows.forEach(r => { votes[r.name] = r.vote; });
+
+      const yes = MEMBERS.filter(m => votes[m] === 'yes').length;
+      const no = MEMBERS.filter(m => votes[m] === 'no').length;
+      const pending = MEMBERS.length - yes - no;
+      document.getElementById('cnt-yes').textContent = yes;
+      document.getElementById('cnt-no').textContent = no;
+      document.getElementById('cnt-pending').textContent = pending;
+      document.getElementById('sub-text').textContent = isPastDeadline()
+        ? `마감 완료 · 총 ${yes+no}명 응답`
+        : `마감 오전 10:30 · ${MEMBERS.length}명 중 ${yes+no}명 응답`;
+
+      const selected = document.getElementById('name-select').value;
+      const myVote = selected ? votes[selected] : null;
+      if (!isPastDeadline()) {
+        document.getElementById('btn-yes').className = 'btn-yes' + (myVote === 'yes' ? ' active' : '');
+        document.getElementById('btn-no').className = 'btn-no' + (myVote === 'no' ? ' active' : '');
+      }
+
+      const body = document.getElementById('member-list-body');
+      body.innerHTML = '';
+      MEMBERS.forEach(name => {
+        const v = votes[name];
+        const badgeClass = v === 'yes' ? 'b-yes' : v === 'no' ? 'b-no' : 'b-pending';
+        const badgeText = v === 'yes' ? '먹어요' : v === 'no' ? '안 먹어요' : '미응답';
+        body.innerHTML += `
+          <div class="member-row">
+            <span class="member-name">${name}</span>
+            <span class="badge ${badgeClass}">${badgeText}</span>
+          </div>`;
+      });
+    }
+
+    async function vote(type) {
+      if (isPastDeadline()) { showToast('마감됐어요 (오전 10:30 마감)'); return; }
+      const name = document.getElementById('name-select').value;
+      if (!name) { showToast('이름을 먼저 선택해 주세요'); return; }
+      if (votes[name] === type) {
+        await deleteVote(name);
+        showToast('응답이 취소됐어요');
+      } else {
+        await upsertVote(name, type);
+        showToast(type === 'yes' ? '참석으로 응답했어요' : '불참으로 응답했어요');
+      }
+      await render();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      setTimeout(() => { t.textContent = ''; }, 2500);
+    }
+
+    async function resetAll() {
+      if (!confirm('오늘 응답을 모두 초기화할까요?')) return;
+      await deleteAll();
+      showToast('초기화됐어요');
+      await render();
+    }
+
+    document.getElementById('name-select').addEventListener('change', () => {
+      if (isPastDeadline()) return;
+      const selected = document.getElementById('name-select').value;
+      const myVote = selected ? votes[selected] : null;
+      document.getElementById('btn-yes').className = 'btn-yes' + (myVote === 'yes' ? ' active' : '');
+      document.getElementById('btn-no').className = 'btn-no' + (myVote === 'no' ? ' active' : '');
+    });
+
+    render();
+
+    setInterval(() => { applyDeadlineUI(); }, 30000);
+  </script>
+</body>
+</html>
