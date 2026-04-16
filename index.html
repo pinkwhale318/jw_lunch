@@ -221,7 +221,7 @@
     }
 
     async function vote(type) {
-      if (isPastDeadline()) { showToast('마감됐어요 (오전 10:30 마감)'); return; }
+      if (isPastDeadline()) { showToast('마감됐어요 (오전 10:00 마감)'); return; }
       const name = document.getElementById('name-select').value;
       if (!name) { showToast('이름을 먼저 선택해 주세요'); return; }
       if (votes[name] === type) {
